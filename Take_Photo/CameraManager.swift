@@ -22,9 +22,8 @@ class CameraManager: NSObject, ObservableObject {
     override init() {
             super.init()
         }
-//...
-    
-    
+
+        // Asks for permission to use camera of the device. -> Make sure you set a camera usage description in your xcodeproj file
         func checkPermissions() async -> Bool {
             let status = AVCaptureDevice.authorizationStatus(for: .video)
             switch status {
@@ -37,10 +36,8 @@ class CameraManager: NSObject, ObservableObject {
             }
         }
     
-    // Sets up the capture session (assumes permissions are handled).
         func configureSession() async -> Bool {
             guard await checkPermissions() else { return false }
-
             do {
                 try setupCaptureDevice()
                 return true
@@ -49,13 +46,15 @@ class CameraManager: NSObject, ObservableObject {
                 return false
             }
         }
-
+        
+        //Main function setting up all the stream we will use for input and output
         private func setupCaptureDevice() throws {
             session.beginConfiguration()
             defer { session.commitConfiguration() }
             
             session.sessionPreset = .photo
 
+            // We use a static back camera, you would want this to be changeable in any real camera app -> see presentation
             guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
                   let input = try? AVCaptureDeviceInput(device: device) else {
                 throw CameraError.deviceUnavailable
@@ -89,7 +88,7 @@ class CameraManager: NSObject, ObservableObject {
                 }
             }
         }
-
+        
         func capturePhoto() async throws -> UIImage {
             return try await withCheckedThrowingContinuation { continuation in
                 self.photoContinuation = continuation
@@ -100,7 +99,6 @@ class CameraManager: NSObject, ObservableObject {
     
     }
 
-    // MARK: - AVCapturePhotoCaptureDelegate
     extension CameraManager: AVCapturePhotoCaptureDelegate {
         func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
             if let error = error {
